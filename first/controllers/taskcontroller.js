@@ -1,43 +1,55 @@
-const task = require("../models/taskmodels");
+const Task = require("../models/taskmodels");
 
-let id = 1;
-
-const getTasks = (req, res) => {
-    res.send(task);
-    console.log(task);
+// Get all tasks
+const getTasks = async (req, res) => {
+    try {
+        const tasks = await Task.find();
+        res.send(tasks);
+    } catch (err) {
+        res.status(500).send("Error fetching tasks");
+    }
 };
 
-const createTask = (req, res) => {
-    const name = req.body.name;
-    task.push({ id: id++, name });
-    res.status(201).send();
+// Create a new task
+const createTask = async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).send("Name is required");
+
+        const newTask = await Task.create({ name });
+        res.status(201).send(newTask);
+    } catch (err) {
+        res.status(500).send("Error creating task");
+    }
 };
 
-const updateTask = (req, res) => {
-    const id = parseInt(req.params.id);
-    if (!id) {
-        return res.status(400).send("Invalid ID");
-    }
+// Update a task by MongoDB ID
+const updateTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name } = req.body;
 
-    const taskupdate = task.find(t => t.id === id);
-    if (!taskupdate) {
-        return res.status(404).send("Task not found");
-    }
+        const updated = await Task.findByIdAndUpdate(id, { name }, { new: true });
+        if (!updated) return res.status(404).send("Task not found");
 
-    const { name } = req.body;
-    taskupdate.name = name;
-    res.send(taskupdate);
+        res.send(updated);
+    } catch (err) {
+        res.status(500).send("Error updating task");
+    }
 };
 
-const deleteTask = (req, res) => {
-    const id = parseInt(req.params.id);
-    const index = task.findIndex(t => t.id === id);
-    if (index === -1) {
-        return res.status(404).send("This task was not found");
-    }
+// Delete a task by MongoDB ID
+const deleteTask = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    const deleted = task.splice(index, 1)[0];
-    res.send(deleted);
+        const deleted = await Task.findByIdAndDelete(id);
+        if (!deleted) return res.status(404).send("Task not found");
+
+        res.send(deleted);
+    } catch (err) {
+        res.status(500).send("Error deleting task");
+    }
 };
 
 module.exports = {
